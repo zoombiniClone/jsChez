@@ -1,0 +1,23 @@
+{
+  "name": "jschez",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zoombiniClone/jsChez.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zoombiniClone/jsChez/issues"
+  },
+  "homepage": "https://github.com/zoombiniClone/jsChez#readme",
+  "dependencies": {
+    "logic-solver": "^2.0.1"
+  }
+}

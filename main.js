@@ -1,3 +1,5 @@
+const Logic = require('logic-solver');
+
 const Menu = {
     0: "Drink",
     1: "Dish",
