@@ -1,5 +1,6 @@
 const Logic = require('logic-solver');
 
+
 const Menu = {
     0: "Drink",
     1: "Dish",
@@ -39,6 +40,7 @@ function printPeople(people) {
     people.forEach(({ drink, dish, dessert }) => {
         console.log(`${Drink[drink]}, ${Dish[dish]}, ${Dessert[dessert]}`);
     });
+    console.log();
 }
 
 function printRules(rules) {
@@ -178,11 +180,132 @@ function getPeople(count) {
     return people;
 }
 
+function solve(count, rules) {
+    let solver = new Logic.Solver();
+
+    let people = [];
+
+    const min = Logic.constantBits(0);
+    const max = Logic.constantBits(2);
+
+    for (let i=0;i<count;i++) {
+
+        people.push([null, null, null]);
+
+        for (let j=0;j<3;j++) {
+            people[i][j] = Logic.variableBits(`people${i}${j}`, 2);
+            solver.require(Logic.greaterThanOrEqual(people[i][j], min));
+            solver.require(Logic.lessThanOrEqual(people[i][j], max));
+        }
+    }
+
+    /* 
+    {
+        type,
+        target: {
+            index,
+            who
+        },
+        menu: {
+            type,
+            food
+        }
+    }
+    */
+    rules.forEach(function (rule) {
+        getTargetIndexes(rule.target, count).forEach((index) => {
+            switch (rule.type) {
+                case 0:
+                    solver.require(Logic.equalBits(people[index][rule.menu.type], Logic.constantBits(rule.menu.food)));
+                    break;
+                case 1:
+                    solver.forbid(Logic.equalBits(people[index][rule.menu.type], Logic.constantBits(rule.menu.food)));
+                    break;
+                default:
+                    console.error("rule type error");
+                    break;
+            }
+        });
+    });
+
+
+    let allSolutions = [];
+    let curSolution = null;
+
+    while ((curSolution = solver.solve())) {
+        allSolutions.push(curSolution);
+        solver.forbid(curSolution.getFormula());
+    }
+
+    return allSolutions.map((sol) => {
+        return people.map((person) => {
+            return {
+                drink: sol.evaluate(person[0]),
+                dish: sol.evaluate(person[1]),
+                dessert: sol.evaluate(person[2])
+            };
+        });
+    });
+}
+
+function shuffleList(list) {
+    let clone = list.slice();
+    clone.sort(() => Math.random() - 0.5);
+    return clone;
+}
+
+function deleteList(list, index) {
+    let clone = list.slice();
+    clone.splice(index, 1);
+    return clone;
+}
+
 function getGame(count) {
-    const people = getPeople(count);
+    const people = getPeople(count);  // 좋아하는 메뉴가 정해진 플레이어들을 가져온다
     printPeople(people);
-    const rules = generateRules(people);
-    printRules(rules);
+    let rules = generateRules(people);  // 주어진 사람들이 가질 수 있는 모든 규칙들을 가져온다
+    // printRules(rules);
+
+    while (1) {
+        let index = Math.floor(Math.random() * rules.length);
+        let removedRules = deleteList(rules, index);
+        const solutionPeoples = solve(count, removedRules);
+
+        // solutionPeoples.forEach((people) => {
+        //     printPeople(people);
+        // });
+
+        if (solutionPeoples.length > 1) {
+            while (1) {
+                let isFinish = true;
+
+                rules = shuffleList(rules);
+
+                for (let i=0;i<rules.length;i++) {
+                    let removedRules = deleteList(rules, i);
+
+                    if (solve(count, removedRules).length == 1) {
+                        rules = removedRules;
+                        isFinish = false;
+                        break;
+                    }
+                }
+
+                if (isFinish) break;
+            }
+
+            console.log();
+
+            rules.sort((a, b) => {
+                return a.target.index - b.target.index;
+            });
+
+            printRules(rules);
+            break;
+        }
+
+        rules = removedRules;
+    }
 }
 
 getGame(6);
